@@ -1,0 +1,24 @@
+{
+  "todo-list": [
+    {
+      "id": 1,
+      "text": "Create React App",
+      "completed": true
+    },
+    {
+      "id": 2,
+      "text": "Using json-server",
+      "completed": true
+    },
+    {
+      "id": 3,
+      "text": "Using axios",
+      "completed": false
+    },
+    {
+      "id": 4,
+      "text": "Toggle select all",
+      "completed": false
+    }
+  ]
+}
