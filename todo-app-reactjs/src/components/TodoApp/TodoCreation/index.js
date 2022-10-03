@@ -2,38 +2,46 @@ import './TodoCreation.scss';
 
 import React, { useEffect, useRef, useState } from "react";
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+import TodoItem from '../TodoItem';
 
 const TodoCreation = () => {
-    const inputRef = useRef();
+    // npx json-server --watch database.json --port 3001
     const apiUrl = 'http://localhost:3001/todo-list'
-    const [job, setJob] = useState([]);
-    const [jobs, setJobs] = useState([]);
+    
+    const inputRef = useRef();
+    const [task, setTask] = useState([]);
+    const [tasks, setTasks] = useState([]);
+    const [isSelectedAll, setIsSelectedAll] = useState(false);
+    let [completedTaskNumber, setCompletedTaskNumber] = useState(0);
 
     useEffect(() => {
-        axios.get('http://localhost:3001/todo-list')
+        axios.get(apiUrl)
             .then((response) => {
                 console.log('response: ', response.data);
-                setJobs(response.data);
+                setTasks(response.data);
+                setCompletedTaskNumber(response.data.filter(task => task.completed).length);
             }).catch((err) => {
                 console.log(err)
             })
     }, [])
 
-    const addNewJob = () => {
-        const newJob = {
-            id: jobs[jobs.length - 1].id + 1,
-            text: job,
+    const addNewTask = () => {
+        const newTask = {
+            // id: tasks[tasks.length - 1].id + 1,
+            id: uuidv4(),
+            text: task,
             completed: false
         }
 
         axios({
             method: 'post',
             url: apiUrl,
-            data: newJob
+            data: newTask
         })
         .then((res) => {
-            setJob('');
-            setJobs([...jobs, newJob]);
+            setTask('');
+            setTasks([...tasks, newTask]);
             inputRef.current.focus();
         })
         .catch((err) => {
@@ -43,54 +51,67 @@ const TodoCreation = () => {
 
     const handleInput = (e) => {
         if(e.target.value) {
-            setJob(e.target.value);
+            setTask(e.target.value);
         }
     }
 
-    const handleCheckComplete = (job) => {
-        job.completed = !job.completed;
+    const handleCheckComplete = (task) => {
+        task.completed = !task.completed;
 
-        const editedJob = {
-            id: job.id,
-            text: job.text,
-            completed: job.completed
+        const editedTask = {
+            id: task.id,
+            text: task.text,
+            completed: task.completed
         }
         
         axios({
             method: 'put',
-            url: `${apiUrl}/${job.id}`,
-            data: editedJob
+            url: `${apiUrl}/${task.id}`,
+            data: editedTask
         })
         .then((res) => {
-            setJobs([...jobs]);
+            setTasks([...tasks]);
+            setCompletedTaskNumber([...tasks].filter((task) => task.completed).length);
         })
         .catch((err) => {
             console.log(err)
         });
     }
 
-    const handleDelete = (jobId) => {
+    const handleDelete = (taskId) => {
         axios({
             method: 'delete',
-            url: `${apiUrl}/${jobId}`
+            url: `${apiUrl}/${taskId}`
         })
         .then((res) => {
-            jobs.forEach((job, index) => {
-                if(job.id === jobId) {
-                    const newJobs = [...jobs];
-                    newJobs.splice(index, 1);
-                    setJobs([...newJobs]);
+            tasks.forEach((task, index) => {
+                if(task.id === taskId) {
+                    const newTasks = [...tasks];
+                    newTasks.splice(index, 1);
+                    setTasks([...newTasks]);
                 }
             })
+            setCompletedTaskNumber([...tasks].filter((task) => task.completed).length);
         })
         .catch((err) => {
             console.log(err)
         });
+    }
+
+    const handleSelectAll = () => {
+        setIsSelectedAll(!isSelectedAll);
+
+        tasks.forEach((task) => {
+            task.completed = isSelectedAll ?  false : true;
+        })
+
+        setTasks([...tasks]);
+        setCompletedTaskNumber([...tasks].filter((task) => task.completed).length);
     }
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        addNewJob();
+        addNewTask();
     }
 
     return (
@@ -98,7 +119,7 @@ const TodoCreation = () => {
             <div className='todo-creation'>
                 <form className='todo-creation__form'>
                     <input 
-                        value={job}
+                        value={task}
                         ref={inputRef}
                         onChange={handleInput}
                         name='todoInput' 
@@ -108,28 +129,29 @@ const TodoCreation = () => {
                     <button className='todo-creation__form__submit' onClick={handleSubmit}>Submit</button>
                 </form>
             </div>
-            <h3 className='todo-count'>Todos ({jobs.length})</h3>
+            <h3 className='todo-count'>Todos ({tasks.length})</h3>
             <div className='select-section'>
-                <div className='select-section__btn select-btn' id='select-btn-all'>
+                <div className={`select-section__btn select-btn${isSelectedAll ? ' checked' : ''}`} id='select-btn-all' onClick={handleSelectAll}>
                 </div>
-                <span className='select-section__number'>Selected </span>
+                <span className='select-section__number'>Selected ({completedTaskNumber})</span>
             </div>
             <ul className='todo-list'>
-                {jobs.map((job) => (
-                    <li className={`todo-item${job.completed ? ' completed' : ''}`} key={job.id}>
+                {tasks.map((task) => (
+                    <li className={`todo-item${task.completed ? ' completed' : ''}`} key={task.id}>
                         <div 
                             className='todo-item__select select-btn'
-                            onClick={() => handleCheckComplete(job)}
+                            onClick={() => handleCheckComplete(task)}
                         >
                         </div>
-                        <span className='todo-item__text'>{job.text}</span>
+                        <span className='todo-item__text'>{task.text}</span>
                         <span 
                             className='todo-item__delete-btn'
-                            onClick={() => handleDelete(job.id)}
+                            onClick={() => handleDelete(task.id)}
                         >
                             &times;
                         </span>
                     </li>
+                    // <TodoItem task={task} key={task.id}/>
                 ))}
             </ul>
         </>
