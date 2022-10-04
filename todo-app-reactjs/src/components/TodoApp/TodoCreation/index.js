@@ -18,7 +18,6 @@ const TodoCreation = () => {
     useEffect(() => {
         axios.get(apiUrl)
             .then((response) => {
-                console.log('response: ', response.data);
                 setTasks(response.data);
                 setCompletedTaskNumber(response.data.filter(task => task.completed).length);
             }).catch((err) => {
@@ -50,9 +49,7 @@ const TodoCreation = () => {
     }
 
     const handleInput = (e) => {
-        if(e.target.value) {
-            setTask(e.target.value);
-        }
+        setTask(e.target.value);
     }
 
     const handleCheckComplete = (task) => {
@@ -76,6 +73,8 @@ const TodoCreation = () => {
         .catch((err) => {
             console.log(err)
         });
+
+        tasks.every((task) => task.completed) ? setIsSelectedAll(true) : setIsSelectedAll(false);
     }
 
     const handleDelete = (taskId) => {
@@ -111,7 +110,10 @@ const TodoCreation = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        addNewTask();
+        console.log('value: ',inputRef.current.value.trim() )
+        if(inputRef.current.value.trim()) {
+            addNewTask();
+        }
     }
 
     return (
